@@ -1,0 +1,11 @@
+{"name":"users","id":10001}
+{"name":"menuItems","id":10002}
+{"name":"orders","id":10003}
+{"name":"bridgeOrders","id":10004}
+{"name":"callLogs","id":10005}
+{"name":"callSessions","id":10006}
+{"name":"locations","id":10007}
+{"name":"restaurantConfigs","id":10008}
+{"name":"customers","id":10009}
+{"name":"waitlist","id":10010}
+{"name":"signups","id":10011}
