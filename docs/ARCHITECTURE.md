@@ -10,6 +10,10 @@
 6. **Onboarding and internal operations**: `/onboarding`, `/pipeline`, `/admin`, `/dev`, `/simulator`, `/integration`, `/sdk`, and `/hub`.
 7. **Data authority**: `convex/schema.ts` is the live schema definition. `backups/convex/<date>/` is immutable recovery evidence, not runtime source.
 
+## Live bridge authority
+
+`docs/LIVE-POS-BRIDGE-SPEC.md` is the authoritative specification for the restaurant-authorized online-order bridge. Where the current UI or SDK simulates browser entry, the specification defines the required production behavior: deterministic entry, ticket readback, fail-closed verification, review evidence, and no payment handling.
+
 ## Recommended path
 
 Preserve this repository as a modular monolith until one restaurant completes a full test call. Splitting services now would make the incomplete seams harder to see. The first reliable vertical slice should be:
@@ -25,6 +29,7 @@ Only after that slice is repeatable should Twilio, the browser/POS bridge, or an
 - Integration secrets live only in deployment configuration; `.env.example` records names, never values.
 - Each database export goes in a new dated directory and is never edited after commit.
 - `docs/PAGE-MAP.md` records page purpose, audience, and maturity so experimental pages are not mistaken for production promises.
+- `docs/LIVE-POS-BRIDGE-SPEC.md` controls the live bridge workflow and must be updated deliberately when that architecture changes.
 
 ## Important decisions before launch
 
