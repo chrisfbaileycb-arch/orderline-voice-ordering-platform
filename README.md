@@ -8,6 +8,7 @@ This private repository preserves the complete application and its matching Conv
 - `convex/` — Convex schema, queries, mutations, HTTP/Twilio flow, AI actions, and automation scaffolding.
 - `backups/convex/2026-08-27/` — the supplied Convex export, preserved as a dated recovery snapshot.
 - `docs/ARCHITECTURE.md` — system boundaries and recommended direction.
+- `docs/LIVE-POS-BRIDGE-SPEC.md` — authoritative workflow for deterministic browser entry, ticket verification, recording, payment boundaries, and pilot certification.
 - `docs/PAGE-MAP.md` — route-by-route ownership and status.
 - `docs/RECOVERY.md` — backup provenance and restoration guidance.
 
@@ -25,4 +26,4 @@ corepack pnpm lint
 corepack pnpm prettier-check
 ```
 
-The production build succeeds. There are currently no automated test files. See the architecture and page map before expanding the product.
+The production build succeeds. There are currently no automated test files. See the architecture, live POS bridge specification, and page map before expanding the product.
