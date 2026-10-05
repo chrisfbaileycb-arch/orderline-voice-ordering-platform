@@ -1,0 +1,6 @@
+{
+  "name": "OrderLine Voice Ordering Platform",
+  "description": "AI-powered voice ordering and restaurant POS bridge platform with real-time order tracking, live voice simulator, and kitchen displays.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -278,7 +278,7 @@ export default function SimulatorPage() {
       setParseResult(result);
       setPhase("parsed");
     } catch {
-      toast.error("AI parsing failed — check your Hercules API key in Secrets");
+      toast.error("AI parsing failed — check your Gemini API key in Secrets");
       setPhase("error");
     }
   }, [orderText, menuContext, parseOrder]);
@@ -306,7 +306,7 @@ export default function SimulatorPage() {
           modifiers: i.modifiers,
         })),
       });
-      addLog("Bridge order created in Convex", "success");
+      addLog("Bridge order created in Firebase", "success");
     } catch {
       addLog("Failed to create bridge order", "error");
       setPhase("error");

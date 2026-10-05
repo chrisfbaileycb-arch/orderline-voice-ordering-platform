@@ -1,0 +1,247 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Common Primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email.lower() == 'chrisfbailey.cb@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Entity Validation Helpers
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+        data.keys().hasOnly(['uid', 'email', 'name', 'role', 'createdAt']) &&
+        data.uid is string && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidMenuItem(data) {
+      return data.keys().hasAll(['name', 'price', 'category', 'available']) &&
+        data.keys().hasOnly(['name', 'description', 'price', 'category', 'emoji', 'available', 'updatedAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 128 &&
+        data.price is number && data.price >= 0 &&
+        data.category is string && data.category.size() <= 64 &&
+        data.available is bool;
+    }
+
+    function isValidLocation(data) {
+      return data.keys().hasAll(['locationId', 'name', 'phone', 'deliveryType']) &&
+        data.locationId is string && isValidId(data.locationId) &&
+        data.name is string && data.name.size() <= 128 &&
+        data.phone is string && data.phone.size() <= 32 &&
+        data.deliveryType in ['thirdparty', 'inhouse', 'both'];
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['sessionId', 'customerName', 'tableNumber', 'items', 'status', 'totalCents']) &&
+        data.sessionId is string && data.sessionId.size() <= 128 &&
+        data.customerName is string && data.customerName.size() <= 128 &&
+        data.tableNumber is string && data.tableNumber.size() <= 32 &&
+        data.items is list && data.items.size() <= 100 &&
+        data.status in ['new', 'confirmed', 'preparing', 'ready', 'done'] &&
+        data.totalCents is number && data.totalCents >= 0;
+    }
+
+    function isValidCallSession(data) {
+      return data.keys().hasAll(['locationId', 'callSid', 'callerNumber', 'flowStep', 'status', 'startedAt']) &&
+        data.locationId is string && isValidId(data.locationId) &&
+        data.callSid is string && data.callSid.size() <= 128 &&
+        data.callerNumber is string && data.callerNumber.size() <= 32 &&
+        data.flowStep is string && data.flowStep.size() <= 64 &&
+        data.status in ['active', 'holding', 'ai_ordering', 'forwarding', 'completed', 'dropped'] &&
+        data.startedAt is number;
+    }
+
+    function isValidCallLog(data) {
+      return data.keys().hasAll(['locationId', 'callSid', 'callerNumber', 'outcome', 'startedAt']) &&
+        data.locationId is string && isValidId(data.locationId) &&
+        data.callSid is string && data.callSid.size() <= 128 &&
+        data.callerNumber is string && data.callerNumber.size() <= 32 &&
+        data.outcome in ['sms_sent', 'order_placed', 'forwarded_to_staff', 'dropped', 'voicemail'] &&
+        data.startedAt is number;
+    }
+
+    function isValidBridgeOrder(data) {
+      return data.keys().hasAll(['orderId', 'customer', 'type', 'items', 'status']) &&
+        data.orderId is string && data.orderId.size() <= 128 &&
+        data.customer is string && data.customer.size() <= 128 &&
+        data.type in ['pickup', 'delivery', 'dine-in'] &&
+        data.items is list && data.items.size() <= 100 &&
+        data.status in ['pending', 'processing', 'entered', 'error'];
+    }
+
+    function isValidCustomer(data) {
+      return data.keys().hasAll(['phone']) &&
+        data.phone is string && data.phone.size() <= 32 &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 128)) &&
+        (!('email' in data) || (data.email is string && data.email.size() <= 256));
+    }
+
+    function isValidRestaurantConfig(data) {
+      return data.keys().hasAll(['locationId', 'storeName']) &&
+        data.locationId is string && isValidId(data.locationId) &&
+        data.storeName is string && data.storeName.size() <= 128;
+    }
+
+    function isValidSignup(data) {
+      return data.keys().hasAll(['contactName', 'restaurantName', 'email']) &&
+        data.contactName is string && data.contactName.size() <= 128 &&
+        data.restaurantName is string && data.restaurantName.size() <= 128 &&
+        data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidWaitlist(data) {
+      return data.keys().hasAll(['email', 'joinedAt']) &&
+        data.email is string && data.email.size() <= 256 &&
+        data.joinedAt is number;
+    }
+
+    // ─── Match Blocks ──────────────────────────────────────────────────────────
+
+    // Test connection check
+    match /test/connection {
+      allow get: if true;
+    }
+
+    // Admins metadata collection
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Users: operators and staff
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().uid == request.auth.uid;
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(incoming()) && incoming().uid == existing().uid;
+      allow delete: if isAdmin();
+    }
+
+    // Menu Items: Publicly readable for restaurant patrons
+    match /menuItems/{menuItemId} {
+      allow get: if isValidId(menuItemId);
+      allow list: if resource.data.available == true || isSignedIn() || isAdmin();
+      allow create: if (isSignedIn() || isAdmin()) && isValidId(menuItemId) && isValidMenuItem(incoming());
+      allow update: if (isSignedIn() || isAdmin()) && isValidId(menuItemId) && isValidMenuItem(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Locations: Publicly readable for phone routing & hours
+    match /locations/{locationId} {
+      allow get: if isValidId(locationId);
+      allow list: if resource.data.locationId != null || isSignedIn() || isAdmin();
+      allow create, update: if (isSignedIn() || isAdmin()) && isValidId(locationId) && isValidLocation(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Call Sessions: Live IVR & simulator call state
+    match /callSessions/{callSessionId} {
+      allow get: if isValidId(callSessionId);
+      allow list: if isSignedIn() || isAdmin();
+      allow create: if isValidId(callSessionId) && isValidCallSession(incoming());
+      allow update: if isValidId(callSessionId) && isValidCallSession(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'flowStep', 'flowPath', 'acknowledgedAt', 'endedAt', 'orderType', 'smsSent', 'orderCaptured'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Call Logs: Historic analytics
+    match /callLogs/{callLogId} {
+      allow get: if isValidId(callLogId) && (isSignedIn() || isAdmin());
+      allow list: if isSignedIn() || isAdmin();
+      allow create: if isValidId(callLogId) && isValidCallLog(incoming());
+      allow update: if isAdmin() && isValidCallLog(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Bridge Orders: Kitchen and POS bridge integration
+    match /bridgeOrders/{bridgeOrderId} {
+      allow get: if isValidId(bridgeOrderId);
+      allow list: if resource.data.orderId != null || isSignedIn() || isAdmin();
+      allow create: if isValidId(bridgeOrderId) && isValidBridgeOrder(incoming());
+      allow update: if isValidId(bridgeOrderId) && isValidBridgeOrder(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'agentLog', 'updatedAt', 'pickupTime'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Customers: CRM profiles
+    match /customers/{customerId} {
+      allow get: if isValidId(customerId) && (isSignedIn() || isAdmin());
+      allow list: if isSignedIn() || isAdmin();
+      allow create, update: if (isSignedIn() || isAdmin()) && isValidId(customerId) && isValidCustomer(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Restaurant Configs: POS integration selectors & setup
+    match /restaurantConfigs/{configId} {
+      allow get: if isValidId(configId);
+      allow list: if isSignedIn() || isAdmin();
+      allow create, update: if (isSignedIn() || isAdmin()) && isValidId(configId) && isValidRestaurantConfig(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Orders: Table and dine-in orders
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId);
+      allow list: if resource.data.sessionId != null || isSignedIn() || isAdmin();
+      allow create: if isValidId(orderId) && isValidOrder(incoming());
+      allow update: if isValidId(orderId) && isValidOrder(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'staffMessage', 'notes'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Signups: Public merchant leads
+    match /signups/{signupId} {
+      allow get: if isValidId(signupId) && (isSignedIn() || isAdmin());
+      allow list: if isSignedIn() || isAdmin();
+      allow create: if isValidId(signupId) && isValidSignup(incoming());
+      allow update: if (isSignedIn() || isAdmin()) && isValidId(signupId) && isValidSignup(incoming());
+      allow delete: if isAdmin();
+    }
+
+    // Waitlist: Public landing page leads
+    match /waitlist/{waitlistId} {
+      allow get, list: if isSignedIn() || isAdmin();
+      allow create: if isValidId(waitlistId) && isValidWaitlist(incoming());
+      allow update, delete: if isAdmin();
+    }
+  }
+}

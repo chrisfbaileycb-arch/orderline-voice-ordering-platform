@@ -1,1 +1,1 @@
-export { useUser, useAuth } from "@usehercules/auth/react";
+export { useUser, useAuth } from "@/components/providers/auth.tsx";

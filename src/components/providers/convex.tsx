@@ -1,13 +1,10 @@
-import { ConvexProviderWithHerculesAuth } from "@usehercules/auth/convex-react";
-import { ConvexReactClient } from "convex/react";
-
-const convexUrl = import.meta.env.VITE_CONVEX_URL ?? "http://localhost:3000";
-const convex = new ConvexReactClient(convexUrl);
+import { ConvexProvider as BaseConvexProvider, ConvexReactClient } from "convex/react";
+import { firebaseDataClient } from "@/lib/firebase-data-client.ts";
 
 export function ConvexProvider({ children }: { children: React.ReactNode }) {
   return (
-    <ConvexProviderWithHerculesAuth client={convex}>
+    <BaseConvexProvider client={firebaseDataClient as unknown as ConvexReactClient}>
       {children}
-    </ConvexProviderWithHerculesAuth>
+    </BaseConvexProvider>
   );
 }

@@ -7,9 +7,11 @@ import { globalIgnores } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
+import firebaseRulesPlugin from "@firebase/eslint-plugin-security-rules";
 
 export default defineConfig([
   globalIgnores(["dist", "**/_generated/*"]),
+  firebaseRulesPlugin.configs["flat/recommended"],
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -38,3 +40,4 @@ export default defineConfig([
     },
   },
 ]);
+

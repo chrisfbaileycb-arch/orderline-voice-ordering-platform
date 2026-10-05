@@ -1,0 +1,260 @@
+{
+  "entities": {
+    "user": {
+      "title": "User",
+      "description": "Authenticated user profile for restaurant operators and admins.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "name": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["admin", "staff", "manager"], "maxLength": 32 },
+        "createdAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["uid", "email"]
+    },
+    "menuItem": {
+      "title": "MenuItem",
+      "description": "Menu item available in the restaurant ordering system.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "maxLength": 128 },
+        "description": { "type": "string", "maxLength": 512 },
+        "price": { "type": "number" },
+        "category": { "type": "string", "maxLength": 64 },
+        "emoji": { "type": "string", "maxLength": 16 },
+        "available": { "type": "boolean" },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["name", "price", "category", "available"]
+    },
+    "location": {
+      "title": "Location",
+      "description": "Store location settings, phone routing, and delivery configurations.",
+      "type": "object",
+      "properties": {
+        "locationId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "name": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "twilioNumber": { "type": "string", "maxLength": 32 },
+        "deliveryType": { "type": "string", "enum": ["thirdparty", "inhouse", "both"], "maxLength": 32 },
+        "pinCode": { "type": "string", "maxLength": 16 },
+        "specials": { "type": "string", "maxLength": 1024 },
+        "customPrompts": { "type": "array" },
+        "thirdPartyLinks": { "type": "object" },
+        "onlineOrderUrl": { "type": "string", "maxLength": 512 },
+        "posOnlineOrderUrl": { "type": "string", "maxLength": 512 },
+        "smsEnabled": { "type": "boolean" }
+      },
+      "required": ["locationId", "name", "phone", "deliveryType"]
+    },
+    "callSession": {
+      "title": "CallSession",
+      "description": "Live phone or simulator call session with state and order telemetry.",
+      "type": "object",
+      "properties": {
+        "locationId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "callSid": { "type": "string", "maxLength": 128 },
+        "callerNumber": { "type": "string", "maxLength": 32 },
+        "callerName": { "type": "string", "maxLength": 128 },
+        "flowStep": { "type": "string", "maxLength": 64 },
+        "flowPath": { "type": "array" },
+        "orderType": { "type": "string", "enum": ["pickup", "delivery", "hold"], "maxLength": 32 },
+        "status": {
+          "type": "string",
+          "enum": ["active", "holding", "ai_ordering", "forwarding", "completed", "dropped"],
+          "maxLength": 32
+        },
+        "smsSent": { "type": "string", "maxLength": 512 },
+        "orderCaptured": { "type": "string", "maxLength": 2048 },
+        "acknowledgedAt": { "type": "number" },
+        "notificationCount": { "type": "number" },
+        "startedAt": { "type": "number" },
+        "endedAt": { "type": "number" }
+      },
+      "required": ["locationId", "callSid", "callerNumber", "flowStep", "status", "startedAt"]
+    },
+    "callLog": {
+      "title": "CallLog",
+      "description": "Historical phone call record, duration, and outcome analytics.",
+      "type": "object",
+      "properties": {
+        "locationId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "callSid": { "type": "string", "maxLength": 128 },
+        "callerNumber": { "type": "string", "maxLength": 32 },
+        "durationSeconds": { "type": "number" },
+        "flowPath": { "type": "array" },
+        "orderType": { "type": "string", "maxLength": 32 },
+        "orderCaptured": { "type": "string", "maxLength": 2048 },
+        "smsSent": { "type": "string", "maxLength": 512 },
+        "outcome": {
+          "type": "string",
+          "enum": ["sms_sent", "order_placed", "forwarded_to_staff", "dropped", "voicemail"],
+          "maxLength": 32
+        },
+        "transcript": { "type": "string", "maxLength": 4096 },
+        "startedAt": { "type": "number" }
+      },
+      "required": ["locationId", "callSid", "callerNumber", "outcome", "startedAt"]
+    },
+    "bridgeOrder": {
+      "title": "BridgeOrder",
+      "description": "POS agent bridge order queued for injection into restaurant POS.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "maxLength": 128 },
+        "customer": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["pickup", "delivery", "dine-in"], "maxLength": 32 },
+        "pickupTime": { "type": "string", "maxLength": 64 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "items": { "type": "array" },
+        "status": { "type": "string", "enum": ["pending", "processing", "entered", "error"], "maxLength": 32 },
+        "agentLog": { "type": "array" },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["orderId", "customer", "type", "items", "status"]
+    },
+    "customer": {
+      "title": "Customer",
+      "description": "Restaurant customer CRM profile and ordering history.",
+      "type": "object",
+      "properties": {
+        "phone": { "type": "string", "maxLength": 32 },
+        "name": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "locationId": { "type": "string", "maxLength": 64 },
+        "loyaltyPoints": { "type": "number" },
+        "orderCount": { "type": "number" },
+        "callCount": { "type": "number" },
+        "ordersCount": { "type": "number" },
+        "lastOrderAt": { "type": "number" },
+        "lastCallAt": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 1024 },
+        "tags": { "type": "array" }
+      },
+      "required": ["phone"]
+    },
+    "restaurantConfig": {
+      "title": "RestaurantConfig",
+      "description": "POS automation mapping and configuration per location.",
+      "type": "object",
+      "properties": {
+        "locationId": { "type": "string", "maxLength": 64, "pattern": "^[a-zA-Z0-9_-]+$" },
+        "storeName": { "type": "string", "maxLength": 128 },
+        "posUrl": { "type": "string", "maxLength": 512 },
+        "twilioNumber": { "type": "string", "maxLength": 32 },
+        "contactName": { "type": "string", "maxLength": 128 },
+        "contactEmail": { "type": "string", "maxLength": 256 },
+        "contactPhone": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["active", "pending", "trial", "churned"], "maxLength": 32 },
+        "notes": { "type": "string", "maxLength": 1024 },
+        "selectorMap": { "type": "object" },
+        "menuSnapshot": { "type": "array" },
+        "configVersion": { "type": "number" }
+      },
+      "required": ["locationId", "storeName"]
+    },
+    "order": {
+      "title": "Order",
+      "description": "Dine-in or table order placed via QR code or direct digital ordering.",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string", "maxLength": 128 },
+        "customerName": { "type": "string", "maxLength": 128 },
+        "tableNumber": { "type": "string", "maxLength": 32 },
+        "items": { "type": "array" },
+        "status": { "type": "string", "enum": ["new", "confirmed", "preparing", "ready", "done"], "maxLength": 32 },
+        "notes": { "type": "string", "maxLength": 512 },
+        "totalCents": { "type": "number" },
+        "staffMessage": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["sessionId", "customerName", "tableNumber", "items", "status", "totalCents"]
+    },
+    "signup": {
+      "title": "Signup",
+      "description": "Merchant self-serve onboarding and sales pipeline lead.",
+      "type": "object",
+      "properties": {
+        "contactName": { "type": "string", "maxLength": 128 },
+        "restaurantName": { "type": "string", "maxLength": 128 },
+        "restaurantPhone": { "type": "string", "maxLength": 32 },
+        "email": { "type": "string", "maxLength": 256 },
+        "locationCount": { "type": "string", "enum": ["1", "2-3", "4-10", "10+"], "maxLength": 16 },
+        "posSystem": { "type": "string", "maxLength": 64 },
+        "voicePreference": { "type": "string", "enum": ["female", "male", "neutral", "calm_professional"], "maxLength": 32 },
+        "termsAgreed": { "type": "boolean" },
+        "pipelineStage": {
+          "type": "string",
+          "enum": ["signed_up", "zoom_scheduled", "pos_mapped", "twilio_live", "test_run", "live", "churned", "lead", "demo_completed"],
+          "maxLength": 32
+        },
+        "stage": { "type": "string", "maxLength": 32 },
+        "zoomDate": { "type": "string", "maxLength": 64 },
+        "onboarderNotes": { "type": "string", "maxLength": 2048 },
+        "linkedLocationId": { "type": "string", "maxLength": 64 },
+        "completedSteps": { "type": "array" },
+        "checklist": { "type": "object" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["contactName", "restaurantName", "email"]
+    },
+    "waitlist": {
+      "title": "Waitlist",
+      "description": "Pre-launch waitlist email signups.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 256 },
+        "joinedAt": { "type": "number" }
+      },
+      "required": ["email", "joinedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "user",
+      "description": "Staff and operator profiles."
+    },
+    "/menuItems/{menuItemId}": {
+      "schema": "menuItem",
+      "description": "Active food and beverage menu items."
+    },
+    "/locations/{locationId}": {
+      "schema": "location",
+      "description": "Restaurant branch details and settings."
+    },
+    "/callSessions/{callSessionId}": {
+      "schema": "callSession",
+      "description": "Active phone and simulator call sessions."
+    },
+    "/callLogs/{callLogId}": {
+      "schema": "callLog",
+      "description": "Call records for historical analytics."
+    },
+    "/bridgeOrders/{bridgeOrderId}": {
+      "schema": "bridgeOrder",
+      "description": "Live POS bridge order queue."
+    },
+    "/customers/{customerId}": {
+      "schema": "customer",
+      "description": "Caller CRM and loyalty profiles."
+    },
+    "/restaurantConfigs/{configId}": {
+      "schema": "restaurantConfig",
+      "description": "Automation configuration and selector mapping."
+    },
+    "/orders/{orderId}": {
+      "schema": "order",
+      "description": "Dine-in and customer table orders."
+    },
+    "/signups/{signupId}": {
+      "schema": "signup",
+      "description": "Merchant pipeline leads and onboarding."
+    },
+    "/waitlist/{waitlistId}": {
+      "schema": "waitlist",
+      "description": "Public waitlist subscribers."
+    }
+  }
+}
